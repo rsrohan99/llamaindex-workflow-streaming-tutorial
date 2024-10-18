@@ -52,6 +52,7 @@ class SimpleEssayWorkflow(Workflow):
         super().__init__(timeout=timeout)
         self.llm = OpenAI(model="gpt-4o-mini")
 
+    @step
     async def write_essay(self, ev: StartEvent, ctx: Context) -> StopEvent:
         topic = ev.topic
         word_limit = ev.word_limit

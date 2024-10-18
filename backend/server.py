@@ -1,4 +1,5 @@
 import json
+import time
 
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +7,7 @@ from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel
 
-from models import EssayData
+from models import RequestData
 from workflow import SimpleEssayWorkflow, TokenEvent
 
 app = FastAPI()
@@ -24,14 +25,14 @@ class ChatMessage(BaseModel):
     message: str
 
 
-@app.post("/chat")
-async def chat(request: Request, data: EssayData):
+@app.post("/essay")
+async def chat(request: Request, data: RequestData):
     try:
         workflow = SimpleEssayWorkflow(
             timeout=360,
         )
 
-        handler = workflow.run(topic=data.topic, word_limit=data.word_limit)
+        handler = workflow.run(topic=data.prompt, word_limit=data.word_limit)
 
         await handler
 
@@ -40,7 +41,8 @@ async def chat(request: Request, data: EssayData):
                 if await request.is_disconnected():
                     break
                 if isinstance(ev, TokenEvent):
-                    yield f"0:{json.dumps(ev.token)}\n"
+                    time.sleep(0.1)
+                    yield f"0:{json.dumps(ev.token)}\n\n"
 
         return StreamingResponse(
             event_generator(),
